@@ -1,0 +1,7 @@
+# Backups exportados pelo app têm seus registros pessoais: não suba para o GitHub
+backup-*.json
+*.backup.json
+
+# Sistema
+.DS_Store
+Thumbs.db
