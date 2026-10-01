@@ -1,6 +1,6 @@
 // Service worker: guarda o app no aparelho para abrir mesmo sem internet.
 // Ao publicar uma versão nova, troque o número abaixo para forçar a atualização.
-const VERSION = "ficha-treino-v1";
+const VERSION = "ficha-treino-v2";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {
