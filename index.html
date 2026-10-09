@@ -792,6 +792,8 @@ body.timer-on .composer{bottom:calc(env(safe-area-inset-bottom,0px) + 144px)}
 .sheet .pro-list li{position:relative;padding-left:20px;margin:8px 0;font-size:14.5px;line-height:1.4}
 .sheet .pro-list li::before{content:"";position:absolute;left:3px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
 #proBody .btn{width:100%}
+.pro-trial{font-size:15px;color:var(--text-2);margin:16px 0 0}
+.pro-trial b{color:var(--accent)}
 #proBody .btn:disabled,#acctBody .btn:disabled{opacity:.5;cursor:default}
 #acctBody .kv b{color:var(--text)}
 .pro-cta{font-size:13px;color:var(--text-2);margin:8px 2px 0}
@@ -2314,7 +2316,7 @@ function renderOffline(){
     </section>
     ${pro ? `<section class="panel">
       <h3>Personal virtual · Plano Pro</h3>
-      <p class="mini">Converse com o personal aqui mesmo, sem copiar e colar: ele conhece seu treino, suas cargas e suas anotações. Faz parte do Plano Pro, por ${proPriceText()}.${invite ? " Entre na sua conta para assinar." : ""}</p>
+      <p class="mini">Converse com o personal aqui mesmo, sem copiar e colar: ele conhece seu treino, suas cargas e suas anotações. Faz parte do Plano Pro: ${PRO_TRIAL} grátis para testar, depois ${proPriceText()}.${invite ? " Entre na sua conta para assinar." : ""}</p>
       <div class="actions">${invite ? `<button type="button" class="btn primary" data-acct-open>Entrar</button>` : ""}<button type="button" class="btn${invite ? "" : " primary"}" data-pro-open>Conhecer o Plano Pro</button></div>
     </section>` : ""}
     <section class="panel">
@@ -4120,7 +4122,7 @@ function cloudOn(){ return !!(window.fichaCloud && window.fichaCloud.enabled) &&
 function aiOffText(){
   if (!proOffer()) return "A análise só funciona abrindo a ficha pelo app do Claude ou pelo claude.ai.";
   if (cloudOn() && !state.cloud) return "O personal virtual faz parte do Plano Pro. Entre na sua conta (botão Entrar, no topo) para assinar.";
-  if (!proActive()) return `O personal virtual faz parte do Plano Pro (${proPriceText()}).`;
+  if (!proActive()) return `O personal virtual faz parte do Plano Pro: ${PRO_TRIAL} grátis, depois ${proPriceText()}.`;
   return "O personal virtual não está disponível agora. Tente de novo mais tarde.";
 }
 /* o personal parou de responder: some da tela; se faltar a assinatura, a ficha passa a mostrar o Plano Pro */
@@ -4240,6 +4242,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") acctSheet.hi
 /* As assinaturas ainda não estão à venda: a tela mostra os planos, e o botão de assinar fica desligado. */
 const PRO_PRICE = {mensal:"R$ 19,99", anual:"R$ 200"};
 const PRO_SAVE = "R$ 39,88"; /* 12 × R$ 19,99 − R$ 200 */
+const PRO_TRIAL = "7 dias";
 const proSheet = document.getElementById("proSheet");
 /* no Claude, a IA usa a conta de quem abre a ficha; o Plano Pro só existe fora dele */
 function proOffer(){ return !(window.claude && typeof window.claude.use === "function"); }
@@ -4255,14 +4258,16 @@ function renderPro(){
       <li><b>Personal no editor:</b> dá dicas a cada exercício e analisa o treino antes de salvar.</li>
     </ul>`;
   if (proActive()){
-    h += `<div class="box"><b>Seu Plano Pro está ativo.</b>${end ? `<p class="mini">${state.pro.status === "canceled" ? `Vale até ${end} e não renova.` : `Próxima renovação: ${end}.`}</p>` : ""}</div>`;
+    const st = state.pro.status;
+    h += `<div class="box"><b>${st === "trialing" ? "Você está no teste grátis do Plano Pro." : "Seu Plano Pro está ativo."}</b>${end ? `<p class="mini">${st === "trialing" ? `O teste vai até ${end}.` : st === "canceled" ? `Vale até ${end} e não renova.` : `Próxima renovação: ${end}.`}</p>` : ""}</div>`;
   } else {
-    h += `<div class="pro-plans">
+    h += `<p class="pro-trial"><b>${PRO_TRIAL} grátis</b> para testar. Depois, escolha o plano:</p>
+      <div class="pro-plans">
         <div class="pro-plan"><b>Mensal</b><strong>${PRO_PRICE.mensal}</strong><small>por mês</small></div>
         <div class="pro-plan best"><span class="pro-tag">Economize ${PRO_SAVE}</span><b>Anual</b><strong>${PRO_PRICE.anual}</strong><small>por ano</small></div>
       </div>
-      <button type="button" class="btn primary" disabled>Assinaturas em breve</button>
-      <p class="mini">As assinaturas ainda não estão abertas. Quando abrirem, você assina por aqui e cancela quando quiser.</p>`;
+      <button type="button" class="btn primary" disabled>Teste grátis em breve</button>
+      <p class="mini">As assinaturas ainda não estão abertas. Quando abrirem, você começa com ${PRO_TRIAL} grátis e pode cancelar antes de ser cobrado.</p>`;
   }
   h += `<p class="mini">O registro de cargas, as sugestões série a série, o calendário, o foguinho e o Shape continuam grátis.</p>
     <button type="button" class="btn-close" data-close>Fechar</button>`;

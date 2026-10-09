@@ -206,7 +206,7 @@ function makeSubscription(sb, uid){
       if (error) return {active:null};
       if (!data) return {active:false};
       const until = data.current_period_end;
-      const active = (data.status === "active" || data.status === "canceled") && Date.parse(until) > Date.now();
+      const active = ["trialing", "active", "canceled"].includes(data.status) && Date.parse(until) > Date.now();
       return {active, plan:data.plan, status:data.status, until};
     }catch(e){ return {active:null}; }
   };

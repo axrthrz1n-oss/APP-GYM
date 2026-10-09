@@ -7,7 +7,7 @@
 //   ANTHROPIC_API_KEY      obrigatório
 //   PERSONAL_MODEL         opcional, padrão claude-opus-5-5
 //   PERSONAL_EFFORT        opcional, padrão low (low, medium, high)
-//   PERSONAL_DAILY_LIMIT   opcional, padrão 40 mensagens por pessoa por dia
+//   PERSONAL_DAILY_LIMIT   opcional, padrão 15 mensagens por pessoa por dia
 //   PERSONAL_REQUIRE_PRO   opcional, padrão true: só quem tem o Plano Pro usa o personal ("false" libera para todos)
 import Anthropic from "npm:@anthropic-ai/sdk@0.133.0";
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
@@ -15,7 +15,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 const MODEL = Deno.env.get("PERSONAL_MODEL") || "claude-opus-5-5";
 const EFFORT_IN = Deno.env.get("PERSONAL_EFFORT") || "low";
 const EFFORT: "low" | "medium" | "high" = EFFORT_IN === "medium" || EFFORT_IN === "high" ? EFFORT_IN : "low";
-const DAILY_LIMIT = Math.max(1, Number(Deno.env.get("PERSONAL_DAILY_LIMIT")) || 40);
+const DAILY_LIMIT = Math.max(1, Number(Deno.env.get("PERSONAL_DAILY_LIMIT")) || 15);
 const REQUIRE_PRO = Deno.env.get("PERSONAL_REQUIRE_PRO") !== "false";
 const MAX_MESSAGES = 40;
 const MAX_CHARS = 150_000;

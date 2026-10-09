@@ -86,11 +86,16 @@ grant execute on function public.personal_use() to authenticated;
 create table if not exists public.subscriptions (
   user_id            uuid        primary key references auth.users (id) on delete cascade,
   plan               text        not null check (plan in ('mensal', 'anual')),
-  -- active: renova sozinha; canceled: não renova, mas vale até o fim do período; refunded: sem acesso
-  status             text        not null check (status in ('active', 'canceled', 'refunded')),
+  -- trialing: nos 7 dias grátis; active: renova sozinha; canceled: não renova, mas vale até o fim do período;
+  -- refunded: sem acesso
+  status             text        not null,
   current_period_end timestamptz not null,
   updated_at         timestamptz not null default now()
 );
+
+alter table public.subscriptions drop constraint if exists subscriptions_status_check;
+alter table public.subscriptions add constraint subscriptions_status_check
+  check (status in ('trialing', 'active', 'canceled', 'refunded'));
 
 alter table public.subscriptions enable row level security;
 
@@ -109,7 +114,7 @@ as $$
   select exists (
     select 1 from public.subscriptions
     where user_id = auth.uid()
-      and status in ('active', 'canceled')
+      and status in ('trialing', 'active', 'canceled')
       and current_period_end > now()
   );
 $$;
