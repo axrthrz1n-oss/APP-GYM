@@ -111,6 +111,16 @@ Todas as sugestões consideram **carga e repetições juntas**, pela força esti
 - **Personal no editor**: a cada exercício adicionado, dá uma dica sobre o que acrescentar, tirar ou trocar, com espaço para responder, e analisa o treino completo antes de salvar.
 - Registros salvos na conta de cada pessoa, sincronizados entre aparelhos. Quem entra pela primeira vez monta o próprio treino do zero.
 
+### Conta na nuvem (opcional, fora do Claude)
+Com o `config.js` preenchido (veja [Ligar a conta na nuvem](#ligar-a-conta-na-nuvem-supabase)), a versão publicada no GitHub Pages ganha:
+- **Entrar com e-mail**, sem senha: a pessoa recebe um código e digita no app.
+- **Treinos, plano, anotações e configurações salvos na nuvem**, sincronizados entre o celular e o computador.
+- **Os registros do aparelho vão junto** no primeiro login. Se a conta já tiver dados, vale o que estiver mais novo em cada treino, e o plano da conta é mantido.
+- **Personal virtual e personal no editor** funcionando fora do Claude, pela API do Claude, com limite diário de mensagens por pessoa.
+- **Sair da conta** apaga os treinos do aparelho e mantém tudo na nuvem.
+
+Sem o `config.js` preenchido, nada muda: a ficha continua salvando só no aparelho.
+
 ## Tecnologias
 
 | Área | O que foi usado |
@@ -123,6 +133,7 @@ Todas as sugestões consideram **carga e repetições juntas**, pela força esti
 | APIs do navegador | Web Audio (bipe do descanso), Clipboard, Web Share e Vibration |
 | Fontes | Barlow e Barlow Condensed (Google Fonts) |
 | Integração opcional | Runtime de artifacts do Claude (`window.claude`) para salvar na conta, ranking e personal virtual |
+| Conta na nuvem (opcional) | Supabase: login por código no e-mail, Postgres com regras por usuário (RLS), tempo real entre aparelhos e uma Edge Function que chama a API do Claude para o personal virtual |
 
 ## Como usar
 
@@ -139,6 +150,35 @@ python3 -m http.server 8000
 2. Em **Settings → Pages**, escolha a branch `main` e a pasta `/ (root)`.
 3. O app fica disponível em `https://axrthrz1n-oss.github.io/APP-GYM/`.
 
+### Ligar a conta na nuvem (Supabase)
+Tudo isso é feito uma vez, no painel do [Supabase](https://supabase.com) (tem plano gratuito) e no [Console da Anthropic](https://console.anthropic.com).
+
+1. **Crie um projeto** no Supabase.
+2. **Crie as tabelas:** em **SQL Editor → New query**, cole o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e toque em **Run**.
+3. **Ligue o login por código:** em **Authentication → Emails**, edite os modelos **Magic Link** e **Confirm signup** para mostrar o código, por exemplo: `Seu código da Ficha de Treino: {{ .Token }}`.
+4. **Endereço do app:** em **Authentication → URL Configuration**, coloque `https://axrthrz1n-oss.github.io/APP-GYM/` em **Site URL**.
+5. **Personal virtual:**
+   - crie uma chave de API no Console da Anthropic;
+   - no Supabase, em **Edge Functions → Secrets**, adicione `ANTHROPIC_API_KEY` com essa chave;
+   - publique a função [`supabase/functions/personal`](supabase/functions/personal/index.ts) com a CLI do Supabase:
+     ```bash
+     npx supabase login
+     npx supabase functions deploy personal --project-ref SEU-PROJECT-REF
+     ```
+6. **Conecte o app:** em **Project Settings → API**, copie a **Project URL** e a chave **anon** (ou **publishable**) para o [`config.js`](config.js), faça o commit e publique.
+
+Ajustes opcionais do personal, também em **Edge Functions → Secrets**:
+
+| Segredo | Padrão | Para que serve |
+|---|---|---|
+| `PERSONAL_MODEL` | `claude-opus-5-5` | Modelo do Claude usado nas respostas |
+| `PERSONAL_EFFORT` | `low` | Quanto o modelo pensa antes de responder (`low`, `medium` ou `high`) |
+| `PERSONAL_DAILY_LIMIT` | `40` | Mensagens por pessoa por dia |
+
+Cuidados:
+- A chave **anon/publishable** é pública e pode ficar no `config.js`: quem protege os dados são as regras do banco, e cada pessoa só lê e grava os próprios registros. Nunca coloque no repositório a chave **service_role** nem a chave da Anthropic.
+- O e-mail que vem com o Supabase serve para testar e envia poucos e-mails por hora. Antes de abrir para mais gente, configure um SMTP próprio em **Authentication → SMTP Settings**.
+
 ### Instalar no celular
 - **iPhone (Safari):** Compartilhar → **Adicionar à Tela de Início**.
 - **Android (Chrome):** menu ⋮ → **Instalar app** ou **Adicionar à tela inicial**.
@@ -152,6 +192,12 @@ ficha-de-treino/
 ├── index.html            # o app inteiro: HTML, CSS e JavaScript
 ├── manifest.webmanifest  # nome, cores e ícones do app instalável
 ├── sw.js                 # service worker (cache para uso offline)
+├── config.js             # endereço e chave pública do Supabase (vazio = só no aparelho)
+├── cloud.js              # conta na nuvem: login, sincronização e personal virtual
+├── vendor/               # biblioteca do Supabase (carregada só com a conta ligada)
+├── supabase/
+│   ├── schema.sql        # tabelas e regras de acesso do banco
+│   └── functions/personal/index.ts  # função que chama a API do Claude
 ├── icons/                # ícones do app (180, 192 e 512 px)
 ├── docs/                 # capturas de tela do README
 ├── LICENSE
@@ -162,6 +208,7 @@ ficha-de-treino/
 
 - **Fora do Claude:** tudo fica no `localStorage` do navegador do próprio aparelho, nas chaves `ficha-treino-v1` (treinos e anotações), `ficha-plan-v1` (plano montado no editor), `ficha-config-v1` (semanas leves, restaurações, cor e peso corporal) e `ficha-theme-v1` (tema). Nada é enviado para servidor nenhum. Use **Análise → Exportar backup** de vez em quando.
 - **Publicado como artifact no Claude:** os registros ficam salvos na conta de cada usuário, numa área privada, e sincronizam entre o celular e o computador. No ranking aparece só o que cada pessoa escolher mostrar.
+- **Com a conta na nuvem (Supabase):** os treinos, o plano e as configurações ficam na tabela `user_docs`, uma linha por documento, e só o dono lê e grava. O aparelho guarda uma cópia para funcionar sem internet e envia as mudanças quando a conexão volta. A função do personal não guarda as conversas: ela só repassa a pergunta para a API do Claude e conta o uso do dia em `ai_usage`. As respostas do personal no card do treino ficam salvas junto do treino; a conversa da aba Análise fica só no aparelho.
 
 ## Personalizar o treino
 

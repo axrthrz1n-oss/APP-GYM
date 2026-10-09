@@ -1,7 +1,7 @@
 // Service worker: guarda o app no aparelho para abrir mesmo sem internet.
 // Ao publicar uma versão nova, troque o número abaixo para forçar a atualização.
-const VERSION = "ficha-treino-v4";
-const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"];
+const VERSION = "ficha-treino-v5";
+const FILES = ["./", "./index.html", "./config.js", "./cloud.js", "./manifest.webmanifest", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
