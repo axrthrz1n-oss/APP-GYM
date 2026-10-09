@@ -770,6 +770,32 @@ body.timer-on .composer{bottom:calc(env(safe-area-inset-bottom,0px) + 144px)}
 .ok{font-size:14px;color:var(--success);margin:12px 0 0}
 .ok.err{color:var(--danger)}
 .chip[data-oq][aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+/* conta na nuvem */
+.hd-sub{display:flex;align-items:center;gap:10px;min-width:0;margin-top:2px}
+.hd-sub .status{margin-top:0}
+.acct-btn{appearance:none;border:0;background:none;padding:2px 0;font:inherit;font-size:11.5px;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
+.acct-in{display:block;width:100%;border:0;border-radius:10px;background:var(--surface-2);color:var(--text);font:inherit;font-size:16px;padding:12px 14px;margin:6px 0 10px;outline:none;text-align:left}
+.acct-in:focus{box-shadow:inset 0 0 0 2px var(--accent)}
+.acct-in.code{font-size:22px;letter-spacing:.3em;text-align:center}
+#acctBody .btn{width:100%;margin-top:2px}
+#acctBody .link{display:block;margin:6px auto 0}
+#acctBody .ok{text-align:center}
+/* Plano Pro */
+.pro-plans{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 12px}
+.pro-plan{position:relative;background:var(--surface-2);border:2px solid transparent;border-radius:14px;padding:16px 10px 12px;text-align:center}
+.pro-plan.best{border-color:var(--accent)}
+.pro-plan b{display:block;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2)}
+.pro-plan strong{display:block;font-family:var(--display);font-size:30px;font-weight:700;margin:4px 0 0;color:var(--text)}
+.pro-plan small{display:block;font-size:12.5px;color:var(--text-2)}
+.pro-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--on-accent);font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.sheet .pro-list{list-style:none;margin:8px 0 0;padding:0;text-align:left;color:var(--text)}
+.sheet .pro-list li{position:relative;padding-left:20px;margin:8px 0;font-size:14.5px;line-height:1.4}
+.sheet .pro-list li::before{content:"";position:absolute;left:3px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+#proBody .btn{width:100%}
+#proBody .btn:disabled,#acctBody .btn:disabled{opacity:.5;cursor:default}
+#acctBody .kv b{color:var(--text)}
+.pro-cta{font-size:13px;color:var(--text-2);margin:8px 2px 0}
+.pro-cta .link{padding:0}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
@@ -777,7 +803,7 @@ body.timer-on .composer{bottom:calc(env(safe-area-inset-bottom,0px) + 144px)}
 <header class="top">
   <div class="top-inner">
     <div class="brand">
-      <div class="hd"><h1 class="app-title">Ficha de treino</h1><span class="status" id="status" data-k="loading" role="status">Conectando…</span></div>
+      <div class="hd"><h1 class="app-title">Ficha de treino</h1><div class="hd-sub"><span class="status" id="status" data-k="loading" role="status">Conectando…</span><button type="button" class="acct-btn" id="acctBtn" hidden>Entrar</button></div></div>
       <div class="brand-actions">
       <button type="button" class="fire-btn off" id="fireBtn" aria-label="Foguinho"><span id="fireIcon"></span><b id="fireN">0</b></button>
       <button type="button" class="pal-btn" id="palBtn" aria-label="Aparência: tema e cor"><i></i></button>
@@ -791,6 +817,8 @@ body.timer-on .composer{bottom:calc(env(safe-area-inset-bottom,0px) + 144px)}
 <main id="app"></main>
 <div class="sheet-bg" id="colorSheet" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="colorTitle" id="colorBody"></div></div>
 <div class="sheet-bg" id="finishSheet" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="finTitle" id="finishBody"></div></div>
+<div class="sheet-bg" id="proSheet" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="proTitle" id="proBody"></div></div>
+<div class="sheet-bg" id="acctSheet" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="acctTitle" id="acctBody"></div></div>
 <div class="sheet-bg" id="fireSheet" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fireTitle" id="fireBody"></div></div>
 <div class="timer" id="timer" hidden>
   <div class="tbar"><i id="tProg"></i></div>
@@ -808,6 +836,8 @@ body.timer-on .composer{bottom:calc(env(safe-area-inset-bottom,0px) + 144px)}
     <button type="button" data-view="analise" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l3.5-4 3 2.5L19 8"/></svg><span>Análise</span></button>
   </div>
 </nav>
+<script src="config.js"></script>
+<script src="cloud.js"></script>
 <script>
 (function(){
 "use strict";
@@ -1035,6 +1065,7 @@ async function writeCfg(){
 }
 function subscribeCfg(){
   state.cfgRef.onSnapshot(snap => {
+    if (state.link && state.link.cfg){ state.link.cfg = false; if (snap.exists && !state.cfgWriting){ state.cfgDirty = false; saveCfg(); } }
     if (state.cfgDirty || state.cfgWriting){ writeCfg(); return; }
     if (snap.exists){ applyCfg(snap.data() || {}); applyAccent(); applyTheme(); saveCfg(); onData(); }
   }, () => {});
@@ -1479,6 +1510,11 @@ function subscribe(){
   state.unsub = state.col.orderBy("date", "desc").limit(1000).onSnapshot(snap => {
     const next = {};
     snap.docs.forEach(d => { const v = d.data(); if (v) next[d.id] = JSON.parse(JSON.stringify(v)); });
+    if (state.link && state.link.sessions){
+      /* primeiro login neste aparelho: só sobe o que a nuvem não tem ou o que está mais novo aqui */
+      state.link.sessions = false;
+      state.dirty = new Set([...state.dirty].filter(id => state.sessions[id] && (!next[id] || (state.sessions[id].updatedAt || "") > (next[id].updatedAt || ""))));
+    }
     state.dirty.forEach(id => { if (state.sessions[id]) next[id] = state.sessions[id]; });
     state.sessions = next; saveCache(); onData();
     if (!state.firstSnap){ state.firstSnap = true; if (state.dirty.size) flushAllDirty(); else setStatus("saved"); }
@@ -1487,32 +1523,51 @@ function subscribe(){
     else goLocal();
   });
 }
-async function connect(){
+/* onde os dados ficam: no Claude (artifact) ou na conta da nuvem (config.js); sem nenhum dos dois, só no aparelho */
+function runtime(){
   const c = window.claude;
-  if (!c || typeof c.use !== "function"){ goLocal(); return; }
+  if (c && typeof c.use === "function") return Promise.resolve(c);
+  return window.fichaCloud ? window.fichaCloud.ready() : Promise.resolve(null);
+}
+async function connect(){
+  const c = await runtime();
+  if (!c || typeof c.use !== "function"){ goLocal(); updateAcctBtn(); return; }
   try{
+    const cloud = !!c.cloud;
     const [db, user] = await Promise.all([c.use("db"), c.use("user")]);
     const uid = user ? await user.id() : null;
     if (!db || !uid){ goLocal(); return; }
     state.col = db.doc(`data/users/${uid}/log`).collection("sessions");
     state.cfgRef = db.doc(`data/users/${uid}/config`);
     state.planRef = db.doc(`data/users/${uid}/plan`);
-    state.rankCol = db.collection("ranking");
-    state.uid = uid; state.userCap = user;
+    state.rankCol = cloud ? null : db.collection("ranking");
+    state.uid = uid; state.userCap = user; state.cloud = cloud; state.email = cloud ? user.email || "" : "";
     try{ state.isOwner = await user.isOwner(); }catch(e){ state.isOwner = false; }
     /* a cópia guardada no navegador é de outra conta? descarta antes de sincronizar */
     let prevOwner = null; try{ prevOwner = localStorage.getItem(OWNER_KEY); }catch(e){}
     const hadCache = Object.keys(state.sessions).length > 0 || !!state.plan || (chat.turns && chat.turns.length > 0);
-    if ((prevOwner && prevOwner !== uid) || (!prevOwner && hadCache && !state.isOwner)) resetLocalData();
+    if ((prevOwner && prevOwner !== uid) || (!prevOwner && hadCache && !state.isOwner && !cloud)) resetLocalData();
+    if (cloud && prevOwner !== uid) linkLocalData();
     try{ localStorage.setItem(OWNER_KEY, uid); }catch(e){}
     state.idPending = false;
     state.mode = "db";
     subscribe();
     subscribeCfg();
     subscribePlan();
-    subscribeRanking();
+    if (state.rankCol) subscribeRanking();
+    updateAcctBtn();
     if (state.view === "treino") render();
-  }catch(e){ goLocal(); }
+  }catch(e){ goLocal(); updateAcctBtn(); }
+}
+/* primeiro login da conta na nuvem neste aparelho: os treinos, o plano e as configurações daqui vão junto.
+   O que a nuvem já tiver prevalece (ver subscribe, subscribeCfg e subscribePlan). */
+function linkLocalData(){
+  Object.keys(state.sessions).forEach(id => state.dirty.add(id));
+  if (!state.plan && loggedSessions().length){ const p = normalizePlan(JSON.parse(JSON.stringify(DEFAULT_PLAN))); if (p){ state.plan = p; applyPlan(p); } }
+  state.planDirty = !!state.plan;
+  state.cfgDirty = true;
+  state.link = {sessions:true, plan:true, cfg:true};
+  saveCache(); savePlanCache(); saveCfg();
 }
 const OWNER_KEY = "ficha-owner-v1";
 function resetLocalData(){
@@ -1923,7 +1978,7 @@ const CHAT_KEY = "ficha-chat-v1";
 const QUICK = ["Analise minhas anotações", "Como foi minha última semana?", "Onde devo subir a carga?", "Tem algum exercício estagnado?", "Estou evoluindo desde o começo?"];
 const ICON_SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg>';
 const ICON_STOP = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>';
-const HIDE_CODES = ["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"];
+const HIDE_CODES = ["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed","subscription_required"];
 const chat = {turns:[], busy:false, ctl:null, partial:"", note:"", noteErr:false, off:false};
 let sampleFn = null, sampleReady = null;
 
@@ -1933,8 +1988,13 @@ function loadChat(){
 function saveChat(){ try{ localStorage.setItem(CHAT_KEY, JSON.stringify({turns:chat.turns.slice(-20)})); }catch(e){} }
 function loadSample(){
   sampleReady = (async () => {
-    const c = window.claude;
+    const c = await runtime();
     if (!c || typeof c.use !== "function") return null;
+    if (c.cloud && typeof c.subscription === "function"){
+      /* fora do Claude, o personal é do Plano Pro; sem saber (sem internet), deixa o servidor decidir */
+      state.pro = await c.subscription();
+      if (state.pro.active === false){ chat.paywall = true; return null; }
+    }
     try{ return await c.use("sample"); }catch(e){ return null; }
   })().then(fn => { sampleFn = fn || null; if (!sampleFn){ chat.off = true; if (state.view === "treino") paintCoach(); if (state.view === "analise") renderAnalysis(); } updateComposer(); return sampleFn; });
 }
@@ -2048,7 +2108,7 @@ function paintCoach(){
   const id = curId(), s = state.sessions[id], t = coachOf(s);
   const busyHere = coachAI.busy && coachAI.sid === id;
   const sub = document.getElementById("coachSub");
-  if (sub) sub.textContent = chat.off ? "Anotações do treino. O personal responde na versão do Claude." : "Conhece seu treino, suas cargas e suas anotações";
+  if (sub) sub.textContent = chat.off ? (!proOffer() ? "Anotações do treino. O personal responde na versão do Claude." : proActive() ? "Anotações do treino. O personal está indisponível agora." : "Anotações do treino. O personal responde no Plano Pro.") : "Conhece seu treino, suas cargas e suas anotações";
   let html = "";
   if (!t.length && !chat.off) html += `<div class="cm a"><div class="cm-b"><p>Oi! Me conta como está o treino: alguma dor, cansaço ou dúvida? Quando você terminar, eu comento como foi.</p></div></div>`;
   html += t.map(m => m.r === "u"
@@ -2056,6 +2116,7 @@ function paintCoach(){
     : `<div class="cm a">${m.k === "feedback" ? `<span class="cm-tag">Resumo do treino</span>` : ""}<div class="cm-b">${md(m.t)}</div></div>`).join("");
   if (busyHere) html += `<div class="cm a">${coachAI.kind === "feedback" ? `<span class="cm-tag">Resumo do treino</span>` : ""}<div class="cm-b">${coachAI.partial ? md(coachAI.partial) : '<p class="nr-wait">Digitando…</p>'}</div></div>`;
   if (coachAI.err && coachAI.errSid === id && !busyHere) html += `<p class="nr-err">${esc(coachAI.err)} <button type="button" class="link" data-coach-retry>Tentar de novo</button></p>`;
+  if (chat.off && proOffer() && !proActive()) html += `<p class="pro-cta">Com o Plano Pro, o personal responde às suas anotações e comenta o treino quando você finaliza. <button type="button" class="link" data-pro-open>Conhecer o Plano Pro</button></p>`;
   th.innerHTML = html;
   const chips = document.getElementById("coachChips");
   if (chips){ chips.hidden = chat.off || busyHere; chips.innerHTML = COACH_CHIPS.map((c, i) => `<button type="button" class="chip" data-coach-chip="${i}">${c.label}</button>`).join(""); }
@@ -2117,7 +2178,7 @@ async function runCoach(id, internal, kind){
     const code = e && e.code;
     if (e && e.text && code !== "refused" && code !== "cancelled"){ add(e.text); ok = true; }
     else { coachAI.err = errCopy(code) || "Não foi possível responder agora."; coachAI.errSid = id; coachAI.retry = {internal, kind}; }
-    if (HIDE_CODES.includes(code)) chat.off = true;
+    if (HIDE_CODES.includes(code)) aiOff(code);
   }finally{
     coachAI.busy = false; coachAI.ctl = null; coachAI.partial = ""; coachAI.kind = null;
     if (state.view === "treino") paintCoach();
@@ -2167,12 +2228,12 @@ function errCopy(code){
   switch (code){
     case "cancelled": return "";
     case "rate_limited": return "Muitas perguntas seguidas ou limite de uso atingido. Tente de novo em alguns minutos.";
-    case "session_expired": return "Sua sessão do Claude expirou. Entre de novo e volte aqui.";
+    case "session_expired": return cloudOn() ? "Sua sessão expirou. Toque em Conta, no topo, saia e entre de novo." : "Sua sessão do Claude expirou. Entre de novo e volte aqui.";
     case "refused": return "Não foi possível responder a essa pergunta. Tente escrever de outro jeito.";
     case "prompt_too_large": return "A conversa ficou grande demais. Toque em Nova conversa e pergunte de novo.";
     case "empty_completion": return "A resposta veio vazia. Tente uma pergunta mais específica.";
     default:
-      if (HIDE_CODES.includes(code)) return "A análise não está disponível aqui. Abra a ficha pelo app do Claude ou pelo claude.ai.";
+      if (HIDE_CODES.includes(code)) return aiOffText();
       return "A resposta foi interrompida. Envie a pergunta de novo.";
   }
 }
@@ -2206,10 +2267,12 @@ async function ask(q){
     const code = e && e.code;
     if (e && e.text && code !== "refused") chat.turns.push({role:"assistant", content:e.text + (code === "cancelled" ? "\n\n(resposta interrompida)" : "")});
     chat.note = errCopy(code); chat.noteErr = !!chat.note;
-    if (HIDE_CODES.includes(code)) chat.off = true;
+    if (HIDE_CODES.includes(code)) aiOff(code);
   }finally{
     chat.busy = false; chat.ctl = null; chat.partial = "";
-    saveChat(); renderThread(); updateComposer();
+    saveChat();
+    if (chat.paywall && state.view === "analise"){ renderAnalysis(); return; }
+    renderThread(); updateComposer();
   }
 }
 
@@ -2227,7 +2290,7 @@ function renderAnalysis(){
       </div>
     </section>
     <div id="thread" class="thread" aria-live="polite"></div>
-    <p class="avail" id="avail" hidden>A análise só funciona abrindo a ficha pelo app do Claude ou pelo claude.ai.</p>
+    <p class="avail" id="avail" hidden>${aiOffText()}</p>
     <div class="composer" id="composer">
       <textarea id="ask" rows="1" placeholder="Pergunte sobre seu treino" aria-label="Pergunta"></textarea>
       <button type="button" class="send" id="send" aria-label="Enviar">${ICON_SEND}</button>
@@ -2238,6 +2301,8 @@ function renderAnalysis(){
 }
 /* Fora do Claude: monta o texto para colar no Claude e oferece backup dos registros */
 function renderOffline(){
+  const invite = cloudOn() && !state.cloud;
+  const pro = proOffer() && !proActive();
   main.innerHTML = `<section class="summary">
       <h2>Análise</h2>
       <p class="when">Escolha uma pergunta. O app monta um texto com o plano, os registros e as anotações para você colar no Claude ou em outro assistente.</p>
@@ -2247,6 +2312,11 @@ function renderOffline(){
         <div class="stat"><span>Último</span><strong class="num" id="aLast">—</strong></div>
       </div>
     </section>
+    ${pro ? `<section class="panel">
+      <h3>Personal virtual · Plano Pro</h3>
+      <p class="mini">Converse com o personal aqui mesmo, sem copiar e colar: ele conhece seu treino, suas cargas e suas anotações. Faz parte do Plano Pro, por ${proPriceText()}.${invite ? " Entre na sua conta para assinar." : ""}</p>
+      <div class="actions">${invite ? `<button type="button" class="btn primary" data-acct-open>Entrar</button>` : ""}<button type="button" class="btn${invite ? "" : " primary"}" data-pro-open>Conhecer o Plano Pro</button></div>
+    </section>` : ""}
     <section class="panel">
       <h3>O que você quer saber?</h3>
       <div class="chips">${QUICK.map(q => `<button type="button" class="chip" data-oq="${esc(q)}" aria-pressed="false">${esc(q)}</button>`).join("")}</div>
@@ -2259,7 +2329,7 @@ function renderOffline(){
     </section>
     <section class="panel">
       <h3>Backup dos registros</h3>
-      <p class="mini">Fora do Claude, os registros, o plano e as anotações ficam salvos só neste navegador. Exporte um backup de vez em quando.</p>
+      <p class="mini">${invite ? "Sem conta, os registros, o plano e as anotações ficam salvos só neste navegador. Entre na sua conta ou exporte um backup de vez em quando." : "Fora do Claude, os registros, o plano e as anotações ficam salvos só neste navegador. Exporte um backup de vez em quando."}</p>
       <div class="actions">
         <button type="button" class="btn" id="oexport">Exportar backup</button>
         <label class="btn" for="oimport">Importar backup</label>
@@ -2822,6 +2892,7 @@ async function writePlan(){
 function subscribePlan(){
   state.planRef.onSnapshot(snap => {
     state.planPending = false;
+    if (state.link && state.link.plan){ state.link.plan = false; if (snap.exists && !state.planWriting){ state.planDirty = false; savePlanCache(); } }
     if (state.planDirty || state.planWriting){ writePlan(); onPlanChanged(); return; }
     if (snap.exists){
       const p = normalizePlan(snap.data());
@@ -3073,7 +3144,7 @@ function edMsgs(){
 async function runEd(){
   if (chat.off) return;
   const fn = sampleFn || (sampleReady ? await sampleReady : null);
-  if (!fn){ edCoach.err = "O personal só responde na versão da ficha publicada no Claude."; paintEdCoach(); return; }
+  if (!fn){ edCoach.err = proOffer() ? aiOffText() : "O personal só responde na versão da ficha publicada no Claude."; paintEdCoach(); return; }
   if (edCoach.ctl){ try{ edCoach.ctl.abort(); }catch(e){} }
   const ctl = new AbortController(); edCoach.ctl = ctl;
   Object.assign(edCoach, {busy:true, partial:"", err:""});
@@ -3087,7 +3158,7 @@ async function runEd(){
     const code = e && e.code;
     if (e && e.text && code !== "refused" && code !== "cancelled") edCoach.thread.push({r:"a", t:e.text});
     else if (code !== "cancelled" && !(e && e.name === "AbortError")) edCoach.err = errCopy(code) || "Não foi possível responder agora.";
-    if (HIDE_CODES.includes(code)) chat.off = true;
+    if (HIDE_CODES.includes(code)) aiOff(code);
   }finally{
     if (edCoach.ctl === ctl){ edCoach.busy = false; edCoach.ctl = null; edCoach.partial = ""; paintEdCoach(); }
   }
@@ -4039,6 +4110,169 @@ main.addEventListener("click", e => {
 });
 main.addEventListener("keydown", e => { if (state.view === "shape" && e.target.id === "shapeW" && e.key === "Enter"){ e.preventDefault(); if (saveWeight(e.target.value)){ shape.editW = false; renderShape(); } } });
 
+/* ---------- Conta na nuvem (config.js) ---------- */
+const ACCT_KEY = "ficha-acct-pending-v1";
+const acct = {step:"email", email:"", busy:false, msg:"", err:false};
+const acctBtn = document.getElementById("acctBtn");
+const acctSheet = document.getElementById("acctSheet");
+/* a conta na nuvem só aparece quando config.js está preenchido e a ficha não está aberta no Claude */
+function cloudOn(){ return !!(window.fichaCloud && window.fichaCloud.enabled) && !(window.claude && typeof window.claude.use === "function"); }
+function aiOffText(){
+  if (!proOffer()) return "A análise só funciona abrindo a ficha pelo app do Claude ou pelo claude.ai.";
+  if (cloudOn() && !state.cloud) return "O personal virtual faz parte do Plano Pro. Entre na sua conta (botão Entrar, no topo) para assinar.";
+  if (!proActive()) return `O personal virtual faz parte do Plano Pro (${proPriceText()}).`;
+  return "O personal virtual não está disponível agora. Tente de novo mais tarde.";
+}
+/* o personal parou de responder: some da tela; se faltar a assinatura, a ficha passa a mostrar o Plano Pro */
+function aiOff(code){
+  chat.off = true;
+  if (code === "subscription_required"){ chat.paywall = true; state.pro = {active:false}; }
+}
+function updateAcctBtn(){
+  if (!acctBtn) return;
+  /* enquanto conecta, não mostra "Entrar" para quem já está logado */
+  acctBtn.hidden = !cloudOn() || state.mode === "loading";
+  acctBtn.textContent = state.cloud ? "Conta" : "Entrar";
+}
+function acctPending(save){
+  try{
+    if (save === null){ localStorage.removeItem(ACCT_KEY); return; }
+    if (save){ localStorage.setItem(ACCT_KEY, JSON.stringify({email:acct.email, at:Date.now()})); return; }
+    const p = JSON.parse(localStorage.getItem(ACCT_KEY) || "null");
+    if (p && p.email && Date.now() - p.at < 3600000){ acct.email = p.email; acct.step = "code"; }
+  }catch(e){}
+}
+function acctError(e, kind){
+  const code = String(e && e.code || ""), st = e && e.status;
+  if (!navigator.onLine) return "Sem conexão. Tente de novo quando tiver internet.";
+  if (st === 429 || /rate_limit/.test(code)) return "Muitas tentativas seguidas. Espere um minuto e tente de novo.";
+  if (kind === "verify" && (code === "otp_expired" || st === 400 || st === 401 || st === 403)) return "Código errado ou vencido. Confira o último e-mail ou peça outro código.";
+  if (code === "email_address_invalid" || code === "validation_failed") return "Esse e-mail não foi aceito. Confira se está certo.";
+  return "Não deu certo agora. Tente de novo em instantes.";
+}
+function renderAcct(){
+  let h = `<div class="grab"></div><h2 id="acctTitle">Sua conta</h2>`;
+  if (state.cloud){
+    h += `<p class="sub">Conectado como <b>${esc(state.email || "sua conta")}</b>.</p>
+      <div class="box"><p class="mini">Seus treinos, o plano, as anotações do treino e as configurações ficam salvos na nuvem e aparecem em qualquer aparelho em que você entrar com este e-mail.</p>
+        <div class="kv"><span>Plano</span><b>${proActive() ? "Pro" : "Grátis"}</b></div></div>
+      <button type="button" class="btn" data-pro-open>${proActive() ? "Ver meu Plano Pro" : "Conhecer o Plano Pro"}</button>
+      <button type="button" class="btn" data-acct-out ${acct.busy ? "disabled" : ""}>Sair da conta</button>
+      <p class="mini">Ao sair, os treinos somem deste aparelho e continuam salvos na sua conta.</p>`;
+  } else if (acct.step === "code"){
+    h += `<p class="sub">Digite o código que enviamos para <b>${esc(acct.email)}</b>.</p>
+      <input class="acct-in code" id="acctCode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="000000" aria-label="Código recebido por e-mail">
+      <button type="button" class="btn primary" data-acct-verify ${acct.busy ? "disabled" : ""}>${acct.busy ? "Entrando…" : "Entrar"}</button>
+      <button type="button" class="link" data-acct-resend ${acct.busy ? "disabled" : ""}>Reenviar código</button>
+      <button type="button" class="link" data-acct-back>Usar outro e-mail</button>`;
+  } else {
+    h += `<p class="sub">Entre com seu e-mail para guardar os treinos na nuvem e usar em mais de um aparelho.</p>
+      <input class="acct-in" id="acctEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="seu@email.com" value="${esc(acct.email)}" aria-label="E-mail">
+      <button type="button" class="btn primary" data-acct-send ${acct.busy ? "disabled" : ""}>${acct.busy ? "Enviando…" : "Enviar código"}</button>
+      <p class="mini">Sem senha: você recebe um código por e-mail. Os treinos deste aparelho vão junto para a sua conta.</p>`;
+  }
+  if (acct.msg) h += `<p class="ok${acct.err ? " err" : ""}" role="status">${esc(acct.msg)}</p>`;
+  h += `<button type="button" class="btn-close" data-close>Fechar</button>`;
+  document.getElementById("acctBody").innerHTML = h;
+}
+function openAcct(){
+  if (!cloudOn()) return;
+  if (!state.cloud && acct.step === "email") acctPending();
+  acct.msg = ""; acct.err = false;
+  renderAcct(); acctSheet.hidden = false;
+  const f = document.getElementById(acct.step === "code" ? "acctCode" : "acctEmail");
+  if (f && !state.cloud) setTimeout(() => f.focus(), 60);
+}
+async function acctSend(){
+  const inp = document.getElementById("acctEmail");
+  const email = String(inp ? inp.value : acct.email).trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ acct.msg = "Digite um e-mail válido."; acct.err = true; renderAcct(); return; }
+  acct.email = email; acct.busy = true; acct.msg = ""; renderAcct();
+  try{
+    await window.fichaCloud.sendCode(email);
+    acct.step = "code"; acctPending(true);
+    acct.msg = "Código enviado. Se não chegar em um minuto, confira o spam."; acct.err = false;
+  }catch(e){ acct.msg = acctError(e, "send"); acct.err = true; }
+  acct.busy = false; renderAcct();
+  const f = document.getElementById("acctCode"); if (f) f.focus();
+}
+async function acctVerify(){
+  const code = String((document.getElementById("acctCode") || {}).value || "").replace(/\D/g, "");
+  if (code.length < 6){ acct.msg = "Digite o código que chegou no e-mail."; acct.err = true; renderAcct(); return; }
+  acct.busy = true; acct.msg = ""; renderAcct();
+  try{
+    if (!(await window.fichaCloud.verifyCode(acct.email, code))) throw new Error("sem sessão");
+    acctPending(null);
+    acct.msg = "Pronto! Carregando sua ficha…"; acct.err = false; renderAcct();
+    location.reload();
+  }catch(e){ acct.busy = false; acct.msg = acctError(e, "verify"); acct.err = true; renderAcct(); }
+}
+async function acctOut(){
+  if (state.dirty.size || state.cfgDirty || state.planDirty || anyPending()){
+    if (navigator.onLine){ flushAllDirty(); if (state.cfgDirty) writeCfg(); if (state.planDirty) writePlan(); }
+    acct.msg = navigator.onLine ? "Enviando os últimos registros. Quando aparecer Salvo no topo, toque em Sair de novo." : "Há registros que ainda não foram para a nuvem. Conecte-se à internet, espere aparecer Salvo e saia depois.";
+    acct.err = true; renderAcct(); return;
+  }
+  acct.busy = true; renderAcct();
+  await window.fichaCloud.signOut();
+  resetLocalData();
+  try{ localStorage.removeItem(OWNER_KEY); }catch(e){}
+  location.reload();
+}
+if (acctBtn) acctBtn.addEventListener("click", openAcct);
+document.addEventListener("click", e => { if (e.target.closest("[data-acct-open]")) openAcct(); });
+acctSheet.addEventListener("click", e => {
+  if (e.target.id === "acctSheet" || e.target.closest("[data-close]")){ acctSheet.hidden = true; return; }
+  if (acct.busy) return;
+  if (e.target.closest("[data-acct-send]") || e.target.closest("[data-acct-resend]")) acctSend();
+  else if (e.target.closest("[data-acct-verify]")) acctVerify();
+  else if (e.target.closest("[data-acct-back]")){ acct.step = "email"; acct.msg = ""; acctPending(null); renderAcct(); }
+  else if (e.target.closest("[data-acct-out]")) acctOut();
+});
+acctSheet.addEventListener("keydown", e => {
+  if (e.key !== "Enter" || acct.busy) return;
+  if (e.target.id === "acctEmail"){ e.preventDefault(); acctSend(); }
+  else if (e.target.id === "acctCode"){ e.preventDefault(); acctVerify(); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") acctSheet.hidden = true; });
+
+/* ---------- Plano Pro: personal virtual e recursos com IA ---------- */
+/* As assinaturas ainda não estão à venda: a tela mostra os planos, e o botão de assinar fica desligado. */
+const PRO_PRICE = {mensal:"R$ 19,99", anual:"R$ 200"};
+const PRO_SAVE = "R$ 39,88"; /* 12 × R$ 19,99 − R$ 200 */
+const proSheet = document.getElementById("proSheet");
+/* no Claude, a IA usa a conta de quem abre a ficha; o Plano Pro só existe fora dele */
+function proOffer(){ return !(window.claude && typeof window.claude.use === "function"); }
+function proActive(){ return !!(state.pro && state.pro.active); }
+function proPriceText(){ return `${PRO_PRICE.mensal} por mês ou ${PRO_PRICE.anual} por ano`; }
+function renderPro(){
+  const end = state.pro && /^\d{4}-\d{2}-\d{2}/.test(state.pro.until || "") ? `${fmtDate(state.pro.until.slice(0, 10))}/${state.pro.until.slice(0, 4)}` : "";
+  let h = `<div class="grab"></div><h2 id="proTitle">Plano Pro</h2>
+    <p class="sub">O personal virtual e todos os recursos com IA da ficha.</p>
+    <ul class="pro-list">
+      <li><b>Personal na Análise:</b> pergunte sobre sua evolução, onde subir a carga e o que está estagnado.</li>
+      <li><b>Personal no treino:</b> responde às suas anotações e comenta o treino quando você finaliza.</li>
+      <li><b>Personal no editor:</b> dá dicas a cada exercício e analisa o treino antes de salvar.</li>
+    </ul>`;
+  if (proActive()){
+    h += `<div class="box"><b>Seu Plano Pro está ativo.</b>${end ? `<p class="mini">${state.pro.status === "canceled" ? `Vale até ${end} e não renova.` : `Próxima renovação: ${end}.`}</p>` : ""}</div>`;
+  } else {
+    h += `<div class="pro-plans">
+        <div class="pro-plan"><b>Mensal</b><strong>${PRO_PRICE.mensal}</strong><small>por mês</small></div>
+        <div class="pro-plan best"><span class="pro-tag">Economize ${PRO_SAVE}</span><b>Anual</b><strong>${PRO_PRICE.anual}</strong><small>por ano</small></div>
+      </div>
+      <button type="button" class="btn primary" disabled>Assinaturas em breve</button>
+      <p class="mini">As assinaturas ainda não estão abertas. Quando abrirem, você assina por aqui e cancela quando quiser.</p>`;
+  }
+  h += `<p class="mini">O registro de cargas, as sugestões série a série, o calendário, o foguinho e o Shape continuam grátis.</p>
+    <button type="button" class="btn-close" data-close>Fechar</button>`;
+  document.getElementById("proBody").innerHTML = h;
+}
+function openPro(){ acctSheet.hidden = true; renderPro(); proSheet.hidden = false; }
+document.addEventListener("click", e => { if (e.target.closest("[data-pro-open]")) openPro(); });
+proSheet.addEventListener("click", e => { if (e.target.id === "proSheet" || e.target.closest("[data-close]")) proSheet.hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") proSheet.hidden = true; });
+
 /* ---------- Navegação ---------- */
 const viewsEl = document.getElementById("views");
 const calBtn = document.getElementById("calBtn");
@@ -4080,10 +4314,11 @@ loadCfg();
 try{ const lt = localStorage.getItem(THEME_KEY); if (lt && state.config && !state.config.theme) state.config.theme = lt; }catch(e){}
 applyTheme();
 loadPlanCache();
-state.idPending = !!(window.claude && typeof window.claude.use === "function");
+state.idPending = !!(window.claude && typeof window.claude.use === "function") || (cloudOn() && window.fichaCloud.hasSession());
 state.planPending = !state.plan && state.idPending;
 applyAccent();
 loadChat();
+updateAcctBtn();
 render();
 updateFire();
 connect();
