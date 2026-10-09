@@ -128,10 +128,12 @@ Fora do Claude, o personal virtual e os outros recursos com IA fazem parte de um
 |---|---|
 | Mensal | R$ 19,99 por mês |
 | Anual | R$ 200 por ano (economia de R$ 39,88) |
+| Teste grátis | 7 dias, nos dois planos |
 
 - **Inclui:** personal na Análise, personal no treino (responde às anotações e comenta o treino ao finalizar) e personal no editor (dicas a cada exercício e análise antes de salvar).
 - **Continua grátis:** registro de cargas, sugestões série a série, histórico, calendário, foguinho, Shape, editor de treino e backup.
-- **Ainda não está à venda:** o app mostra os planos e o botão aparece como **Assinaturas em breve**, desligado.
+- **Limite:** 15 mensagens com o personal por pessoa por dia, para manter o custo da IA sob controle.
+- **Ainda não está à venda:** o app mostra os planos e o teste grátis, e o botão aparece como **Teste grátis em breve**, desligado.
 - **No Claude**, o Plano Pro não aparece: lá a IA usa a conta de quem abre a ficha.
 
 ## Tecnologias
@@ -184,9 +186,9 @@ Ajustes opcionais do personal, também em **Edge Functions → Secrets**:
 
 | Segredo | Padrão | Para que serve |
 |---|---|---|
-| `PERSONAL_MODEL` | `claude-opus-5-5` | Modelo do Claude usado nas respostas |
+| `PERSONAL_MODEL` | `claude-haiku-5-5` | Modelo do Claude usado nas respostas. O Haiku é o mais barato; `claude-sonnet-5-5` e `claude-opus-5-5` respondem melhor e custam bem mais |
 | `PERSONAL_EFFORT` | `low` | Quanto o modelo pensa antes de responder (`low`, `medium` ou `high`) |
-| `PERSONAL_DAILY_LIMIT` | `40` | Mensagens por pessoa por dia |
+| `PERSONAL_DAILY_LIMIT` | `15` | Mensagens por pessoa por dia |
 | `PERSONAL_REQUIRE_PRO` | `true` | Só quem tem o Plano Pro usa o personal. `false` libera para todos (por exemplo, num teste com amigos) |
 
 **Plano Pro no servidor:** o `schema.sql` cria a tabela `subscriptions`, que o app só lê, e a função do personal confere a assinatura antes de chamar a API do Claude. Sem ela, a resposta é recusada mesmo que alguém mexa no app. Enquanto o pagamento não existe, dá para liberar o Plano Pro para uma conta à mão, em **SQL Editor**:
@@ -197,7 +199,7 @@ select id, 'anual', 'active', now() + interval '1 year' from auth.users where em
 on conflict (user_id) do update set plan = excluded.plan, status = excluded.status, current_period_end = excluded.current_period_end;
 ```
 
-Para cobrar de verdade, falta ligar um meio de pagamento que grave nessa tabela pelo servidor, com a chave **service_role**. Nos apps da App Store e do Google Play, assinaturas de recursos digitais precisam passar pela compra dentro do app de cada loja.
+Para cobrar de verdade, falta ligar um meio de pagamento que grave nessa tabela pelo servidor, com a chave **service_role**. Nos apps da App Store e do Google Play, assinaturas de recursos digitais precisam passar pela compra dentro do app de cada loja. O teste grátis entra na tabela com o status `trialing` e o fim do teste em `current_period_end`. As lojas já garantem um teste por pessoa; num pagamento pelo site, o servidor precisa conferir isso.
 
 Cuidados:
 - A chave **anon/publishable** é pública e pode ficar no `config.js`: quem protege os dados são as regras do banco, e cada pessoa só lê e grava os próprios registros. Nunca coloque no repositório a chave **service_role** nem a chave da Anthropic.
