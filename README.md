@@ -186,7 +186,7 @@ Ajustes opcionais do personal, também em **Edge Functions → Secrets**:
 
 | Segredo | Padrão | Para que serve |
 |---|---|---|
-| `PERSONAL_MODEL` | `claude-opus-5-5` | Modelo do Claude usado nas respostas |
+| `PERSONAL_MODEL` | `claude-haiku-5-5` | Modelo do Claude usado nas respostas. O Haiku é o mais barato; `claude-sonnet-5-5` e `claude-opus-5-5` respondem melhor e custam bem mais |
 | `PERSONAL_EFFORT` | `low` | Quanto o modelo pensa antes de responder (`low`, `medium` ou `high`) |
 | `PERSONAL_DAILY_LIMIT` | `15` | Mensagens por pessoa por dia |
 | `PERSONAL_REQUIRE_PRO` | `true` | Só quem tem o Plano Pro usa o personal. `false` libera para todos (por exemplo, num teste com amigos) |
