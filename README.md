@@ -4,7 +4,7 @@
 
 # Ficha de Treino
 
-**Ficha de musculação para o celular, com registro de cargas, sugestão de carga série a série, mapa muscular com patentes, calendário e sequência de dias treinados.**
+**Ficha de musculação para o celular, com registro de cargas, sugestão de carga série a série, mapa muscular com patentes, calendário, sequência de dias treinados e personal virtual com IA.**
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
@@ -22,7 +22,9 @@
 
 A **Ficha de Treino** substitui a ficha de papel da academia. Ela mostra o treino do dia, guarda a carga e as repetições de cada série e, a partir desses registros, sugere a carga de cada série, diz quando subir, mostra a evolução treino a treino e acompanha a frequência ao longo do ano. Cada músculo ganha uma **patente** (de Bronze a Lenda) conforme a força registrada, mostrada num mapa muscular que dá para girar.
 
-O app inteiro é **um único arquivo HTML**, escrito em **HTML, CSS e JavaScript puros**, sem frameworks, sem bibliotecas e sem etapa de build. Ele funciona direto no navegador, pode ser instalado na tela inicial do celular como um app (PWA) e continua funcionando sem internet.
+A ficha é escrita em **HTML, CSS e JavaScript puros**, sem frameworks e sem etapa de build: o app inteiro está no `index.html`. Ele funciona direto no navegador, pode ser instalado na tela inicial do celular como um app (PWA) e continua funcionando sem internet.
+
+A **conta na nuvem** e o **personal virtual** são opcionais. Eles usam o [Supabase](https://supabase.com) e a API do Claude e só ligam quando o `config.js` está preenchido. Fora do Claude, o personal faz parte do **Plano Pro**, uma assinatura de R$ 19,99 por mês ou R$ 200 por ano, com 7 dias grátis, que ainda não está à venda.
 
 ## Capturas de tela
 
@@ -45,6 +47,10 @@ O app inteiro é **um único arquivo HTML**, escrito em **HTML, CSS e JavaScript
 | Editor de treino | Análise | Tema claro |
 |:---:|:---:|:---:|
 | <img src="docs/editor.png" width="240" alt="Editor de treino"> | <img src="docs/analise.png" width="240" alt="Aba de análise"> | <img src="docs/tema-claro.png" width="240" alt="App no tema claro"> |
+
+| Entrar com e-mail | Plano Pro | Personal virtual |
+|:---:|:---:|:---:|
+| <img src="docs/conta.png" width="240" alt="Tela para entrar na conta com o e-mail, sem senha"> | <img src="docs/plano-pro.png" width="240" alt="Plano Pro com os planos mensal e anual e 7 dias grátis"> | <img src="docs/personal.png" width="240" alt="Personal virtual respondendo onde subir a carga"> |
 
 > As capturas usam dados de demonstração.
 
@@ -135,6 +141,7 @@ Fora do Claude, o personal virtual e os outros recursos com IA fazem parte de um
 - **Limite:** 15 mensagens com o personal por pessoa por dia, para manter o custo da IA sob controle.
 - **Ainda não está à venda:** o app mostra os planos e o teste grátis, e o botão aparece como **Teste grátis em breve**, desligado.
 - **No Claude**, o Plano Pro não aparece: lá a IA usa a conta de quem abre a ficha.
+- **Modelo de IA:** o personal usa o Claude Haiku 5.5, o mais barato. Veja a conta em [Plano Pro: custos e lucro estimados](#plano-pro-custos-e-lucro-estimados).
 
 ## Tecnologias
 
@@ -236,6 +243,42 @@ ficha-de-treino/
 - **Publicado como artifact no Claude:** os registros ficam salvos na conta de cada usuário, numa área privada, e sincronizam entre o celular e o computador. No ranking aparece só o que cada pessoa escolher mostrar.
 - **Com a conta na nuvem (Supabase):** os treinos, o plano e as configurações ficam na tabela `user_docs`, uma linha por documento, e só o dono lê e grava. O aparelho guarda uma cópia para funcionar sem internet e envia as mudanças quando a conexão volta. A função do personal não guarda as conversas: ela confere o Plano Pro em `subscriptions`, repassa a pergunta para a API do Claude e conta o uso do dia em `ai_usage`. As respostas do personal no card do treino ficam salvas junto do treino; a conversa da aba Análise fica só no aparelho.
 
+## Plano Pro: custos e lucro estimados
+
+Conta feita antes do lançamento, para escolher o modelo de IA e o limite diário. Os números reais aparecem no Console da Anthropic depois dos primeiros assinantes.
+
+**Premissas**
+- Cada mensagem ao personal leva junto o histórico de treinos: cerca de 10 mil tokens de entrada e mil de resposta.
+- **Uso normal:** cerca de 65 mensagens por mês, para quem treina 4 vezes por semana. **Uso máximo:** 15 por dia, ou 450 por mês.
+- US$ 1 ≈ R$ 5,50.
+- Da receita saem 15% de taxa da loja e cerca de 6% de imposto. De R$ 19,99 sobram **R$ 15,79 por mês**. Do anual de R$ 200, sobram **R$ 13,17 por mês**.
+
+**Custo de IA por assinante por mês**
+
+| Modelo | Preço por milhão de tokens (entrada / saída) | Uso normal | Uso máximo |
+|---|---|---|---|
+| Claude Haiku 5.5 (padrão) | US$ 0,10 / US$ 0,50 | R$ 0,55 a R$ 0,70 | R$ 3,70 a R$ 4,80 |
+| Claude Sonnet 5.5 | US$ 2 / US$ 10 | R$ 11 | R$ 74 |
+| Claude Opus 5.5 | US$ 4 / US$ 20 | R$ 21 | R$ 149 |
+
+No Haiku 5.5, o mesmo texto conta cerca de 30% mais tokens, por isso a faixa.
+
+**Lucro por assinante por mês**
+
+| Modelo | Mensal, uso normal | Anual, uso normal | Mensal, uso máximo |
+|---|---|---|---|
+| Claude Haiku 5.5 (padrão) | +R$ 15,25 | +R$ 12,63 | +R$ 12,08 |
+| Claude Sonnet 5.5 | +R$ 5,06 | +R$ 2,44 | −R$ 58,46 |
+| Claude Opus 5.5 | −R$ 5,66 | −R$ 8,28 | −R$ 132,71 |
+
+- **Teste grátis:** cada teste de 7 dias (umas 15 mensagens) custa poucos centavos com o Haiku, R$ 2,48 com o Sonnet e R$ 4,95 com o Opus.
+- **Exemplo com 100 assinantes mensais de uso normal**, tirando uns R$ 185 por mês de custos fixos (plano pago do Supabase e conta de desenvolvedor da Apple):
+  - Haiku: cerca de R$ 1.340 de lucro por mês.
+  - Sonnet: cerca de R$ 320 de lucro por mês.
+  - Opus: cerca de R$ 750 de prejuízo por mês.
+- **Por isso o padrão é o Haiku 5.5 com limite de 15 mensagens por dia.** Antes de abrir as assinaturas, vale testar a qualidade das respostas com perguntas reais. Para trocar de modelo, basta mudar o segredo `PERSONAL_MODEL`.
+- Recebendo como pessoa física, o imposto pode chegar a 27,5%, e o lucro cai. Os preços das APIs e o câmbio mudam: confira antes de decidir.
+
 ## Personalizar o treino
 
 O jeito mais fácil é pelo próprio app: toque em **Editar treino**, no card do dia. O plano montado ali fica salvo no aparelho e entra no backup.
@@ -268,6 +311,29 @@ A ficha calcula a força estimada da **série pesada mais fraca** e procura a ca
 | Ficou abaixo de 5 (compostos) ou 8 (isolados) | Baixar de 1 a 3 degraus |
 
 Na pirâmide invertida, a referência é só a 1ª série.
+
+## Próximos passos
+
+1. **Validar:** colocar 20 a 30 pessoas da academia para usar e ver quantas continuam depois de 4 semanas.
+2. **Ligar a conta na nuvem:** criar o projeto no Supabase, seguindo [Ligar a conta na nuvem](#ligar-a-conta-na-nuvem-supabase), e testar as respostas do personal com perguntas reais.
+3. **E-mail de login:** configurar um SMTP próprio antes de abrir para mais gente.
+4. **Apagar a conta:** adicionar o botão **Apagar minha conta**, exigido pela Apple e pelo Google.
+5. **Pagamento:** no site, um meio de pagamento como Mercado Pago, Stripe ou Pix, que grave a assinatura em `subscriptions`. Nas lojas, a compra dentro do app.
+6. **Lojas:**
+   - Google Play primeiro, empacotando o PWA com o PWABuilder ou o Bubblewrap.
+   - Depois a App Store, com o Capacitor e recursos nativos, como notificação no fim do descanso, Apple Saúde e widget do foguinho.
+7. **Amigos fora do Claude:** ranking e comparação de shape com grupos e convites.
+8. **Plano para personal trainers:** painel com os alunos, cobrado por personal.
+
+## Histórico de versões
+
+| Data | O que mudou |
+|---|---|
+| 30/09/2026 | Primeira versão: registro de cargas, progressão automática, treino finalizado, foguinho, calendário, análise e personalização. |
+| 01/10/2026 | Editor de treino, sugestões série a série, histórico com evolução, anotações e recursos extras no Claude. |
+| 09/10/2026 | Shape com patentes, tema claro e escuro, resumo do dia no calendário, treino em qualquer dia da semana e contador de séries no editor. |
+| 09/10/2026 | Conta na nuvem opcional (Supabase): login por código no e-mail, sincronização entre aparelhos e personal virtual fora do Claude. |
+| 09/10/2026 | Plano Pro: R$ 19,99 por mês ou R$ 200 por ano, 7 dias grátis (ainda não à venda), limite de 15 mensagens por dia e personal com o Claude Haiku 5.5. |
 
 ## Aviso
 
