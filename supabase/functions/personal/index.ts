@@ -8,6 +8,7 @@
 //   PERSONAL_MODEL         opcional, padrão claude-opus-5-5
 //   PERSONAL_EFFORT        opcional, padrão low (low, medium, high)
 //   PERSONAL_DAILY_LIMIT   opcional, padrão 40 mensagens por pessoa por dia
+//   PERSONAL_REQUIRE_PRO   opcional, padrão true: só quem tem o Plano Pro usa o personal ("false" libera para todos)
 import Anthropic from "npm:@anthropic-ai/sdk@0.133.0";
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 
@@ -15,6 +16,7 @@ const MODEL = Deno.env.get("PERSONAL_MODEL") || "claude-opus-5-5";
 const EFFORT_IN = Deno.env.get("PERSONAL_EFFORT") || "low";
 const EFFORT: "low" | "medium" | "high" = EFFORT_IN === "medium" || EFFORT_IN === "high" ? EFFORT_IN : "low";
 const DAILY_LIMIT = Math.max(1, Number(Deno.env.get("PERSONAL_DAILY_LIMIT")) || 40);
+const REQUIRE_PRO = Deno.env.get("PERSONAL_REQUIRE_PRO") !== "false";
 const MAX_MESSAGES = 40;
 const MAX_CHARS = 150_000;
 const MAX_TOKENS = 8000;
@@ -72,6 +74,13 @@ Deno.serve(async (req) => {
   if (!messages) return json(400, { error: "invalid_argument" });
   const chars = messages.reduce((n, m) => n + (m.content as string).length, 0);
   if (chars > MAX_CHARS) return json(413, { error: "prompt_too_large" });
+
+  // o personal é do Plano Pro: a assinatura é conferida aqui, no servidor, e não só no app
+  if (REQUIRE_PRO) {
+    const { data: pro, error: proError } = await supabase.rpc("has_pro");
+    if (proError) return json(500, { error: "unavailable" });
+    if (pro !== true) return json(402, { error: "subscription_required" });
+  }
 
   const { data: used, error: useError } = await supabase.rpc("personal_use");
   if (useError) return json(500, { error: "unavailable" });

@@ -116,10 +116,23 @@ Com o `config.js` preenchido (veja [Ligar a conta na nuvem](#ligar-a-conta-na-nu
 - **Entrar com e-mail**, sem senha: a pessoa recebe um código e digita no app.
 - **Treinos, plano, anotações e configurações salvos na nuvem**, sincronizados entre o celular e o computador.
 - **Os registros do aparelho vão junto** no primeiro login. Se a conta já tiver dados, vale o que estiver mais novo em cada treino, e o plano da conta é mantido.
-- **Personal virtual e personal no editor** funcionando fora do Claude, pela API do Claude, com limite diário de mensagens por pessoa.
+- **Personal virtual e personal no editor** funcionando fora do Claude, pela API do Claude, para quem tem o [Plano Pro](#plano-pro-em-breve), com limite diário de mensagens por pessoa.
 - **Sair da conta** apaga os treinos do aparelho e mantém tudo na nuvem.
 
 Sem o `config.js` preenchido, nada muda: a ficha continua salvando só no aparelho.
+
+### Plano Pro (em breve)
+Fora do Claude, o personal virtual e os outros recursos com IA fazem parte de uma assinatura:
+
+| Plano | Preço |
+|---|---|
+| Mensal | R$ 19,99 por mês |
+| Anual | R$ 200 por ano (economia de R$ 39,88) |
+
+- **Inclui:** personal na Análise, personal no treino (responde às anotações e comenta o treino ao finalizar) e personal no editor (dicas a cada exercício e análise antes de salvar).
+- **Continua grátis:** registro de cargas, sugestões série a série, histórico, calendário, foguinho, Shape, editor de treino e backup.
+- **Ainda não está à venda:** o app mostra os planos e o botão aparece como **Assinaturas em breve**, desligado.
+- **No Claude**, o Plano Pro não aparece: lá a IA usa a conta de quem abre a ficha.
 
 ## Tecnologias
 
@@ -174,6 +187,17 @@ Ajustes opcionais do personal, também em **Edge Functions → Secrets**:
 | `PERSONAL_MODEL` | `claude-opus-5-5` | Modelo do Claude usado nas respostas |
 | `PERSONAL_EFFORT` | `low` | Quanto o modelo pensa antes de responder (`low`, `medium` ou `high`) |
 | `PERSONAL_DAILY_LIMIT` | `40` | Mensagens por pessoa por dia |
+| `PERSONAL_REQUIRE_PRO` | `true` | Só quem tem o Plano Pro usa o personal. `false` libera para todos (por exemplo, num teste com amigos) |
+
+**Plano Pro no servidor:** o `schema.sql` cria a tabela `subscriptions`, que o app só lê, e a função do personal confere a assinatura antes de chamar a API do Claude. Sem ela, a resposta é recusada mesmo que alguém mexa no app. Enquanto o pagamento não existe, dá para liberar o Plano Pro para uma conta à mão, em **SQL Editor**:
+
+```sql
+insert into public.subscriptions (user_id, plan, status, current_period_end)
+select id, 'anual', 'active', now() + interval '1 year' from auth.users where email = 'seu@email.com'
+on conflict (user_id) do update set plan = excluded.plan, status = excluded.status, current_period_end = excluded.current_period_end;
+```
+
+Para cobrar de verdade, falta ligar um meio de pagamento que grave nessa tabela pelo servidor, com a chave **service_role**. Nos apps da App Store e do Google Play, assinaturas de recursos digitais precisam passar pela compra dentro do app de cada loja.
 
 Cuidados:
 - A chave **anon/publishable** é pública e pode ficar no `config.js`: quem protege os dados são as regras do banco, e cada pessoa só lê e grava os próprios registros. Nunca coloque no repositório a chave **service_role** nem a chave da Anthropic.
@@ -196,7 +220,7 @@ ficha-de-treino/
 ├── cloud.js              # conta na nuvem: login, sincronização e personal virtual
 ├── vendor/               # biblioteca do Supabase (carregada só com a conta ligada)
 ├── supabase/
-│   ├── schema.sql        # tabelas e regras de acesso do banco
+│   ├── schema.sql        # tabelas, regras de acesso e assinaturas do Plano Pro
 │   └── functions/personal/index.ts  # função que chama a API do Claude
 ├── icons/                # ícones do app (180, 192 e 512 px)
 ├── docs/                 # capturas de tela do README
@@ -208,7 +232,7 @@ ficha-de-treino/
 
 - **Fora do Claude:** tudo fica no `localStorage` do navegador do próprio aparelho, nas chaves `ficha-treino-v1` (treinos e anotações), `ficha-plan-v1` (plano montado no editor), `ficha-config-v1` (semanas leves, restaurações, cor e peso corporal) e `ficha-theme-v1` (tema). Nada é enviado para servidor nenhum. Use **Análise → Exportar backup** de vez em quando.
 - **Publicado como artifact no Claude:** os registros ficam salvos na conta de cada usuário, numa área privada, e sincronizam entre o celular e o computador. No ranking aparece só o que cada pessoa escolher mostrar.
-- **Com a conta na nuvem (Supabase):** os treinos, o plano e as configurações ficam na tabela `user_docs`, uma linha por documento, e só o dono lê e grava. O aparelho guarda uma cópia para funcionar sem internet e envia as mudanças quando a conexão volta. A função do personal não guarda as conversas: ela só repassa a pergunta para a API do Claude e conta o uso do dia em `ai_usage`. As respostas do personal no card do treino ficam salvas junto do treino; a conversa da aba Análise fica só no aparelho.
+- **Com a conta na nuvem (Supabase):** os treinos, o plano e as configurações ficam na tabela `user_docs`, uma linha por documento, e só o dono lê e grava. O aparelho guarda uma cópia para funcionar sem internet e envia as mudanças quando a conexão volta. A função do personal não guarda as conversas: ela confere o Plano Pro em `subscriptions`, repassa a pergunta para a API do Claude e conta o uso do dia em `ai_usage`. As respostas do personal no card do treino ficam salvas junto do treino; a conversa da aba Análise fica só no aparelho.
 
 ## Personalizar o treino
 

@@ -79,3 +79,40 @@ $$;
 
 revoke all on function public.personal_use() from public, anon;
 grant execute on function public.personal_use() to authenticated;
+
+-- Plano Pro: o personal virtual e os outros recursos com IA são da assinatura (R$ 19,99 por mês ou R$ 200 por ano).
+-- O app só lê. Quem grava é o servidor, com a chave service_role: no futuro, o aviso de pagamento
+-- da loja ou do meio de pagamento; por enquanto, à mão no SQL Editor (exemplo no README).
+create table if not exists public.subscriptions (
+  user_id            uuid        primary key references auth.users (id) on delete cascade,
+  plan               text        not null check (plan in ('mensal', 'anual')),
+  -- active: renova sozinha; canceled: não renova, mas vale até o fim do período; refunded: sem acesso
+  status             text        not null check (status in ('active', 'canceled', 'refunded')),
+  current_period_end timestamptz not null,
+  updated_at         timestamptz not null default now()
+);
+
+alter table public.subscriptions enable row level security;
+
+drop policy if exists "subscriptions: dono lê" on public.subscriptions;
+create policy "subscriptions: dono lê" on public.subscriptions
+  for select to authenticated using (user_id = auth.uid());
+
+-- A pessoa que chamou tem o Plano Pro valendo agora?
+create or replace function public.has_pro()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.subscriptions
+    where user_id = auth.uid()
+      and status in ('active', 'canceled')
+      and current_period_end > now()
+  );
+$$;
+
+revoke all on function public.has_pro() from public, anon;
+grant execute on function public.has_pro() to authenticated;

@@ -169,7 +169,7 @@ function makeSample(sb){
     }catch(e){ throw fail(e && e.name === "AbortError" ? "cancelled" : "unavailable"); }
     if (!res.ok || !res.body){
       const st = res.status;
-      throw fail(st === 401 ? "session_expired" : st === 429 ? "rate_limited" : st === 413 ? "prompt_too_large" : st === 404 || st === 503 ? "sampling_disabled" : "unavailable");
+      throw fail(st === 401 ? "session_expired" : st === 402 ? "subscription_required" : st === 429 ? "rate_limited" : st === 413 ? "prompt_too_large" : st === 404 || st === 503 ? "sampling_disabled" : "unavailable");
     }
     const reader = res.body.getReader(), dec = new TextDecoder();
     let buf = "", text = "", done = null, errCode = null;
@@ -198,6 +198,20 @@ function makeSample(sb){
   };
 }
 
+/* ---------- Plano Pro: o app só lê; quem grava a assinatura é o servidor ---------- */
+function makeSubscription(sb, uid){
+  return async function subscription(){
+    try{
+      const { data, error } = await sb.from("subscriptions").select("plan,status,current_period_end").eq("user_id", uid).maybeSingle();
+      if (error) return {active:null};
+      if (!data) return {active:false};
+      const until = data.current_period_end;
+      const active = (data.status === "active" || data.status === "canceled") && Date.parse(until) > Date.now();
+      return {active, plan:data.plan, status:data.status, until};
+    }catch(e){ return {active:null}; }
+  };
+}
+
 /* ---------- capacidades para o app ---------- */
 let capsPromise = null;
 function ready(){
@@ -211,7 +225,7 @@ function ready(){
         const uid = s.user.id;
         const db = makeDb(sb, uid), sample = makeSample(sb);
         const user = {id:async () => uid, isOwner:async () => false, email:s.user.email || ""};
-        return {cloud:true, use:async name => name === "db" ? db : name === "user" ? user : name === "sample" ? sample : null};
+        return {cloud:true, subscription:makeSubscription(sb, uid), use:async name => name === "db" ? db : name === "user" ? user : name === "sample" ? sample : null};
       }catch(e){ return null; }
     })();
   }
